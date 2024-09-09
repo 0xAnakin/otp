@@ -217,16 +217,16 @@
 
         /////////////////////////////////////////////
 
-        instance.$input.on('click keyup focus', function (evt) {
+        // instance.$input.on('click keyup focus', function (evt) {
 
-            console.log('->', this.selectionStart)
+        //     console.log('->', this.selectionStart)
 
-            if (this.selectionStart >= length) {
-                this.setSelectionRange(length - 1, length - 1);
-                this.blur();
-            }
+        //     if (this.selectionStart >= length) {
+        //         this.setSelectionRange(length - 1, length - 1);
+        //         this.blur();
+        //     }
 
-        });
+        // });
 
         ////////////////////////////////////////////
 

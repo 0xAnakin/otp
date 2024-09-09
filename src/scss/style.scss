@@ -108,7 +108,8 @@
                 text-indent: 0 !important;
                 letter-spacing: 42.8px !important;
                 transition: background-image 0.3s linear 0s !important;
-
+                cursor: not-allowed !important;
+                pointer-events: none !important;
                 &:hover,
                 &:focus {
                     background-image: url(../images/rounded-rectangle-focus.svg) !important;
