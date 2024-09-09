@@ -1,0 +1,210 @@
+@property --progress {
+    syntax: "<number>";
+    inherits: false;
+    initial-value: 0;
+}
+
+@keyframes progress-animation {
+    from {
+        --progress: 0;
+    }
+
+    to {
+        --progress: 100;
+    }
+}
+
+.otp-bg {
+    display: none;
+    background-color: rgba(255, 255, 255, 0.75);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    box-sizing: border-box;
+
+    * {
+        box-sizing: border-box;
+    }
+
+    >.otp-modal {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        width: 100vw;
+        max-width: 576px;
+        transform: translateX(-50%) translateY(-100%);
+        border-radius: .3rem;
+        background-color: #fbfbfb;
+        border: 1px solid rgba(0, 0, 0, .2);
+        box-shadow: 0 3px 3px rgba(0, 0, 0, .15);
+
+        >.otp-modal-header,
+        >.otp-modal-body,
+        >.otp-modal-footer {
+            padding: 1rem 1rem;
+        }
+
+        >.otp-modal-header {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+
+            >.opt-title-header {
+                font: normal normal 300 32px / 50px Manrope, Verdana, 'Open Sans';
+                letter-spacing: 0px;
+                color: #000000;
+                margin-bottom: 0;
+            }
+        }
+
+        >.otp-modal-body {
+            border-top: 1px solid #dee2e6;
+            border-bottom: 1px solid #dee2e6;
+
+            >.otp-label-body,
+            >.otp-help-body {
+                display: block;
+            }
+
+            >.otp-label-body {
+                font: normal normal normal 14px / 22px Manrope, Verdana, 'Open Sans';
+                letter-spacing: 0.46px;
+                padding: 0 10px;
+                color: #000000;
+                margin-bottom: 0.5rem;
+            }
+
+            >.otp-help-body {
+                font: normal normal normal 12px / 16px Manrope, Verdana, 'Open Sans';
+                letter-spacing: 0.4px;
+                padding: 0 10px;
+                color: #6c757d;
+            }
+
+            >.otp-input-body {
+                display: block !important;
+                width: 100% !important;
+                height: 56px !important;
+                background-color: transparent !important;
+                background-image: url(../images/rounded-rectangle-default.svg) !important;
+                background-size: 56px 56px !important;
+                background-position: left center !important;
+                background-repeat: repeat-x !important;
+                border: none !important;
+                box-shadow: none !important;
+                outline-style: none !important;
+                font-family: Consolas, monospace !important;
+                font-weight: bold !important;
+                font-size: 24px !important;
+                line-height: 56px !important;
+                color: #000 !important;
+                padding: 8px !important;
+                padding-inline-start: 23px !important;
+                margin-bottom: 0.5rem !important;
+                text-indent: 0 !important;
+                letter-spacing: 42.8px !important;
+                transition: background-image 0.3s linear 0s !important;
+
+                &:hover,
+                &:focus {
+                    background-image: url(../images/rounded-rectangle-focus.svg) !important;
+                }
+            }
+        }
+
+        >.otp-modal-footer {
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            align-items: center;
+            background-color: #f1f1f1;
+
+            >.otp-resend-btn-footer,
+            >.otp-validate-btn-footer {
+                border-color: #3C06D9;
+                color: #3C06D9;
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                font: normal normal 600 14px / 20px Verdana, 'Open Sans';
+                letter-spacing: 0.42px;
+                padding: 0.75rem 1.25rem;
+                border-style: solid;
+                border-width: 0.0625rem;
+                border-radius: 0.25rem;
+                text-align: center;
+                text-transform: none;
+                transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+                -ms-user-select: none;
+                -moz-user-select: none;
+                -webkit-user-select: none;
+                user-select: none;
+                vertical-align: middle;
+
+                &:active {
+                    background-color: #6c757d;
+                }
+
+                &:hover {
+                    background-color: #3C06D9;
+                    color: #fff;
+                }
+
+                &:focus {
+                    border-color: #3C06D9 !important;
+                    outline: 0 !important;
+                    box-shadow: 0 0 0 0.2rem rgba(60, 6, 217, 0.25) !important;
+                }
+
+            }
+
+            .otp-validate-btn-footer {
+                margin-left: 0.5rem;
+            }
+        }
+
+    }
+
+    &.visible {
+        >.otp-modal {
+            >.otp-modal-header {
+                .otp-timeout {
+                    --size: 128px;
+                    --half-size: calc(var(--size) / 2);
+                    --stroke-width: 20px;
+                    --radius: calc((var(--size) - var(--stroke-width)) / 2);
+                    --circumference: calc(var(--radius) * pi * 2);
+                    --dash: calc((var(--progress) * var(--circumference)) / 100);
+                    animation: progress-animation 120s linear 0s 1 forwards;
+                }
+
+                .otp-timeout circle {
+                    cx: var(--half-size);
+                    cy: var(--half-size);
+                    r: var(--radius);
+                    stroke-width: var(--stroke-width);
+                    fill: none;
+                    stroke-linecap: round;
+                }
+
+                .otp-timeout circle.bg {
+                    stroke: #ddd;
+                }
+
+                .otp-timeout circle.fg {
+                    transform: rotate(-90deg);
+                    transform-origin: var(--half-size) var(--half-size);
+                    stroke-dasharray: var(--dash) calc(var(--circumference) - var(--dash));
+                    transition: stroke-dasharray 0.3s linear 0s;
+                    stroke: #3C06D9;
+                }
+
+            }
+        }
+    }
+
+}
