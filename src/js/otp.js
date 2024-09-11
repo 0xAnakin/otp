@@ -350,10 +350,15 @@
                 instance.$otp.trigger('otp:show');
                 instance.$otp.stop(true, false).fadeIn(animation.fade);
                 instance.$modal.stop(true, false).animate({
-                    transform: 'translateX(-50%) translatey(-50%)',
+                    transform: 50,
                     top: '50%'
                 }, {
                     duration: animation.position,
+                    step: function (now, fx) {
+                        if (fx.prop === 'transform') {
+                            instance.$modal.css('transform', `translateX(-50%) translateY(${(now - 100)}%)`);
+                        }
+                    },
                     complete: function () {
 
                         if (f instanceof Function) {
@@ -375,10 +380,15 @@
 
                 instance.$otp.trigger('otp:hide');
                 instance.$modal.stop(true, false).animate({
-                    transform: 'translateX(-50%) translatey(-100%)',
+                    transform: 50,
                     top: '0%'
                 }, {
-                    duration: animation.position
+                    duration: animation.position,
+                    step: function (now, fx) {
+                        if (fx.prop === 'transform') {
+                            instance.$modal.css('transform', `translateX(-50%) translateY(-${(50 + now)}%)`);
+                        }
+                    },                    
                 });
                 instance.$otp.stop(true, false).fadeOut(animation.fade, function () {
 
