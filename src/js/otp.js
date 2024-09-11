@@ -486,21 +486,6 @@
 
         });
 
-        instance.$validate.on('click', function () {
-
-            evt.preventDefault();
-            evt.stopImmediatePropagation();
-
-            const valid = instance.validate();
-
-            if (valid) {
-                instance.hide(() => instance.$form.submit());
-            } else {
-                instance.$otp.addClass('invalid');
-            }
-
-        });
-
         if (instance.$form.length) {
 
             instance.$form.on('submit', function (evt) {
