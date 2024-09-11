@@ -283,7 +283,6 @@
 
         });
 
-
         instance.$input.on('otp:change', function (evt) {
 
             const $this = $(this);
@@ -423,7 +422,7 @@
                 const { validateOTP } = this.options.fetch;
                 const resp = await fetch(validateOTP.url, validateOTP.options);
                 const data = await resp.json();
-                
+
                 return this.options.events.onValidate.call(this, data);
 
             } catch (err) {
@@ -488,12 +487,12 @@
 
         if (instance.$form.length) {
 
-            instance.$form.on('submit', function (evt) {
-
+            const onSubmit = function (evt) {
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
-
-            });
+            }
+            
+            instance.$form.on('submit', onSubmit);
 
             instance.$validate.on('click', async function (evt) {
 
@@ -503,7 +502,7 @@
                 const valid = await instance.validate();
 
                 if (valid) {
-                    instance.hide(() => instance.$form.submit());
+                    instance.hide(() => instance.$form.off('submit', onSubmit).submit());
                 } else {
                     instance.$otp.addClass('invalid');
                 }
@@ -516,9 +515,9 @@
 
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
-                
+
                 const valid = await instance.validate();
-                
+
                 if (valid) {
                     instance.hide();
                 } else {
