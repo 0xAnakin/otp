@@ -28,7 +28,9 @@
             label: 'Κωδικός μια χρήσης',
             help: 'Παρακαλώ εισάγετε τον κωδικό μιας χρήσης που σας έχει αποσταλλεί.',
             resend: 'ΕΠΑΝΑΠΟΣΤΟΛΗ',
-            validate: 'ΣΥΝΕΧΕΙΑ'
+            validate: 'ΣΥΝΕΧΕΙΑ',
+            expired: 'O κωδικός που στάλθηκε έχει λήξει.',
+            invalid: 'O κωδικός δεν είναι σωστός.'
         },
         events: {
             onRequest: function (res) {
@@ -58,7 +60,7 @@
         const charArr = [];
         const instance = {};
         const { name, length, i18n, events } = options;
-        const { title, label, help, resend, validate } = i18n;
+        const { title, label, help, expired, invalid, resend, validate } = i18n;
 
         instance.interval = null;
 
@@ -99,6 +101,8 @@
             })()}
                         </div>
                         <small class="otp-help">${help}</small>
+                        <div class="otp-alert otp-invalid">${invalid}</div>
+                        <div class="otp-alert otp-expired">${expired}</div>
                     </div>
                     <div class="otp-modal-footer">
                         <button class="otp-resend-btn-footer">${resend}</button>
@@ -163,7 +167,7 @@
             if (value.length) {
 
                 const $next = $this.next('.otp-char');
-                
+
                 if ($next.length && !$next.val().length) {
                     $next.focus();
                 }
@@ -192,13 +196,13 @@
 
                     if ((selectionStart === 0) || (selectionEnd === 0)) {
                         evt.preventDefault();
-                        evt.stopImmediatePropagation();   
-                    } 
+                        evt.stopImmediatePropagation();
+                    }
 
                     if ($prev.length) {
                         $prev.focus();
                         $prev.get(0).setSelectionRange(1, 1);
-                    }                    
+                    }
 
                     charArr[index] = '';
 
@@ -279,9 +283,9 @@
 
         });
 
-        
+
         instance.$input.on('otp:change', function (evt) {
-            
+
             const $this = $(this);
 
             if ($this.val().length === length) {
@@ -292,7 +296,7 @@
 
         });
 
-        instance.show = async function () {
+        instance.show = async function (f = () => { }) {
 
             if (!instance.active) {
 
@@ -343,7 +347,9 @@
                     }, {
                         duration: 300,
                         complete: function () {
-
+                            if (f instanceof Function) {
+                                f();
+                            }
                         }
                     });
                 });
@@ -352,7 +358,7 @@
 
         }
 
-        instance.hide = function () {
+        instance.hide = function (f = () => { }) {
 
             if (instance.active) {
 
@@ -373,6 +379,10 @@
                             instance.requested = null;
                             instance.expires = null;
                             instance.active = false;
+
+                            if (f instanceof Function) {
+                                f();
+                            }
 
                         });
                     }
@@ -476,6 +486,21 @@
 
         });
 
+        instance.$validate.on('click', function () {
+
+            evt.preventDefault();
+            evt.stopImmediatePropagation();
+
+            const valid = instance.validate();
+
+            if (valid) {
+                instance.hide(() => instance.$form.submit());
+            } else {
+                instance.$otp.addClass('invalid');
+            }
+
+        });
+
         if (instance.$form.length) {
 
             instance.$form.on('submit', function (evt) {
@@ -483,16 +508,39 @@
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
 
+            });
+
+            instance.$validate.on('click', function (evt) {
+
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+
                 const valid = instance.validate();
 
                 if (valid) {
-                    instance.$form.submit();
+                    instance.hide(() => instance.$form.submit());
                 } else {
                     instance.$otp.addClass('invalid');
                 }
 
             });
 
+        } else {
+
+            instance.$validate.on('click', function (evt) {
+
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+
+                const valid = instance.validate();
+
+                if (valid) {
+                    instance.hide();
+                } else {
+                    instance.$otp.addClass('invalid');
+                }
+
+            });
         }
 
         this.data('otp', instance)
