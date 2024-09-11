@@ -43,7 +43,7 @@
                 const compensation = (Date.now() - this.requested) / 2;
 
                 this.duration = duration;
-                this.expires = (new Date((this.requested + this.duration - compensation))).getTime();
+                this.expires = (new Date((this.requested + (this.duration - compensation)))).getTime();
 
             },
             onValidate: function (res) {
