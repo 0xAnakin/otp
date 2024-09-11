@@ -237,7 +237,7 @@
                                 $el.val($next.val());
                             }
 
-                            $this.get(0).setSelectionRange(0, 0);
+                            $this.get(0).setSelectionRange(selectionStart, selectionEnd);
 
                             charArr[index] = value;
 
