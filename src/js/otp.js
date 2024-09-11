@@ -56,7 +56,6 @@
 
     $.fn.OTP = function (options = defaults) {
 
-        const block = {};
         const charArr = [];
         const instance = {};
         const { name, length, i18n, events } = options;
@@ -338,7 +337,8 @@
 
                     return;
                 }
-
+                
+                instance.$otp.trigger('otp:show');
                 instance.$otp.stop(true, false).fadeIn(function () {
                     instance.$modal.stop(true, false).animate({
                         transform: 'translateX(-50%) translatey(-50%)',
@@ -346,9 +346,13 @@
                     }, {
                         duration: 300,
                         complete: function () {
+                            
                             if (f instanceof Function) {
                                 f();
                             }
+
+                            instance.$otp.trigger('otp:shown');
+
                         }
                     });
                 });
@@ -361,6 +365,7 @@
 
             if (instance.active) {
 
+                instance.$otp.trigger('otp:hide');
                 instance.$modal.stop(true, false).animate({
                     transform: 'translateX(-50%) translatey(-100%)',
                     top: '0%'
@@ -382,6 +387,8 @@
                             if (f instanceof Function) {
                                 f();
                             }
+
+                            instance.$otp.trigger('otp:hidden');
 
                         });
                     }
@@ -491,7 +498,7 @@
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
             }
-            
+
             instance.$form.on('submit', onSubmit);
 
             instance.$validate.on('click', async function (evt) {
@@ -502,8 +509,14 @@
                 const valid = await instance.validate();
 
                 if (valid) {
-                    instance.hide(() => instance.$form.off('submit', onSubmit).submit());
+
+                    instance.hide(() => {
+                        instance.$otp.trigger('otp:valid');
+                        instance.$form.off('submit', onSubmit).submit()
+                    });
+
                 } else {
+                    instance.$otp.trigger('otp:invalid');
                     instance.$otp.addClass('invalid');
                 }
 
@@ -519,8 +532,13 @@
                 const valid = await instance.validate();
 
                 if (valid) {
-                    instance.hide();
+
+                    instance.hide(() => {
+                        instance.$otp.trigger('otp:valid');
+                    });
+
                 } else {
+                    instance.$otp.trigger('otp:invalid');
                     instance.$otp.addClass('invalid');
                 }
 
