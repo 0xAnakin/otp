@@ -3,6 +3,10 @@
     const defaults = {
         name: 'otp',
         length: 4,
+        animation: {
+            fade: 600,
+            position: 600
+        },
         fetch: {
             requestOTP: {
                 url: 'http://localhost:3001/api/request.json',
@@ -58,7 +62,7 @@
 
         const charArr = [];
         const instance = {};
-        const { name, length, i18n, events } = options;
+        const { name, length, i18n, animation } = options;
         const { title, label, help, expired, invalid, resend, validate } = i18n;
 
         const onSubmit = function (evt) {
@@ -342,24 +346,23 @@
 
                     return;
                 }
-                
+
                 instance.$otp.trigger('otp:show');
-                instance.$otp.stop(true, false).fadeIn(function () {
-                    instance.$modal.stop(true, false).animate({
-                        transform: 'translateX(-50%) translatey(-50%)',
-                        top: '50%'
-                    }, {
-                        duration: 300,
-                        complete: function () {
-                            
-                            if (f instanceof Function) {
-                                f();
-                            }
+                instance.$otp.stop(true, false).fadeIn(animation.fade);
+                instance.$modal.stop(true, false).animate({
+                    transform: 'translateX(-50%) translatey(-50%)',
+                    top: '50%'
+                }, {
+                    duration: animation.position,
+                    complete: function () {
 
-                            instance.$otp.trigger('otp:shown');
-
+                        if (f instanceof Function) {
+                            f();
                         }
-                    });
+
+                        instance.$otp.trigger('otp:shown');
+
+                    }
                 });
 
             }
@@ -375,28 +378,26 @@
                     transform: 'translateX(-50%) translatey(-100%)',
                     top: '0%'
                 }, {
-                    duration: 300,
-                    complete: function () {
-                        instance.$otp.stop(true, false).fadeOut(function () {
+                    duration: animation.position
+                });
+                instance.$otp.stop(true, false).fadeOut(animation.fade, function () {
 
-                            clearInterval(instance.interval);
+                    clearInterval(instance.interval);
 
-                            instance.$otp.removeClass('visible expired invalid');
-                            instance.$timeout.css('animation-duration', '');
-                            instance.interval = null;
-                            instance.duration = null;
-                            instance.requested = null;
-                            instance.expires = null;
-                            instance.active = false;
+                    instance.$otp.removeClass('visible expired invalid');
+                    instance.$timeout.css('animation-duration', '');
+                    instance.interval = null;
+                    instance.duration = null;
+                    instance.requested = null;
+                    instance.expires = null;
+                    instance.active = false;
 
-                            if (f instanceof Function) {
-                                f();
-                            }
-
-                            instance.$otp.trigger('otp:hidden');
-
-                        });
+                    if (f instanceof Function) {
+                        f();
                     }
+
+                    instance.$otp.trigger('otp:hidden');
+
                 });
 
             }

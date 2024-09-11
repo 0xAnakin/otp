@@ -1,5 +1,7 @@
 # OTP
 
+A simple jQuery one time password plugin. You can check `request.json` & `validate.json` for the default, expected server responses, otherwise you can alter the configuration event methods.
+
 ### Usage
 
 ```html
@@ -28,6 +30,10 @@
 const options = {
         name: 'otp',
         length: 4,
+        animation: {
+            fade: 600,
+            position: 600
+        },        
         fetch: {
             requestOTP: {
                 url: 'http://localhost:3001/api/request.json',
