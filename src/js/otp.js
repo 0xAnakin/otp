@@ -61,6 +61,11 @@
         const { name, length, i18n, events } = options;
         const { title, label, help, expired, invalid, resend, validate } = i18n;
 
+        const onSubmit = function (evt) {
+            evt.preventDefault();
+            evt.stopImmediatePropagation();
+        }
+
         instance.interval = null;
 
         instance.duration = null;
@@ -400,6 +405,10 @@
 
         instance.destroy = function () {
 
+            if (instance.$form.length) {
+                instance.$form.off('submit', onSubmit);
+            }
+
             this.$container.removeData('otp');
             this.$otp.remove();
 
@@ -494,11 +503,6 @@
 
         if (instance.$form.length) {
 
-            const onSubmit = function (evt) {
-                evt.preventDefault();
-                evt.stopImmediatePropagation();
-            }
-
             instance.$form.on('submit', onSubmit);
 
             instance.$validate.on('click', async function (evt) {
@@ -512,7 +516,7 @@
 
                     instance.hide(() => {
                         instance.$otp.trigger('otp:valid');
-                        instance.$form.off('submit', onSubmit).submit()
+                        instance.$form.off('submit', onSubmit).submit();
                     });
 
                 } else {
