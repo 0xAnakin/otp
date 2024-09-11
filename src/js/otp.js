@@ -284,7 +284,7 @@
             
             const $this = $(this);
 
-            if ($this.val().length) {
+            if ($this.val().length === length) {
                 instance.$validate.prop('disabled', false);
             } else {
                 instance.$validate.prop('disabled', true);
