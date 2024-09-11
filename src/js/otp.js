@@ -420,10 +420,10 @@
 
             try {
 
-                const { validationCFG } = this.options.fetch;
-                const resp = await fetch(validationCFG.url, validationCFG.options);
+                const { validateOTP } = this.options.fetch;
+                const resp = await fetch(validateOTP.url, validateOTP.options);
                 const data = await resp.json();
-
+                
                 return this.options.events.onValidate.call(this, data);
 
             } catch (err) {
@@ -495,12 +495,12 @@
 
             });
 
-            instance.$validate.on('click', function (evt) {
+            instance.$validate.on('click', async function (evt) {
 
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
 
-                const valid = instance.validate();
+                const valid = await instance.validate();
 
                 if (valid) {
                     instance.hide(() => instance.$form.submit());
@@ -512,13 +512,13 @@
 
         } else {
 
-            instance.$validate.on('click', function (evt) {
+            instance.$validate.on('click', async function (evt) {
 
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
-
-                const valid = instance.validate();
-
+                
+                const valid = await instance.validate();
+                
                 if (valid) {
                     instance.hide();
                 } else {
