@@ -48,47 +48,47 @@
         }
 
         >.otp-modal-header {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-
             >.otp-title {
-                font: normal normal 300 32px / 50px Manrope, Verdana, 'Open Sans';
+                font: normal normal 300 32px/50px Manrope, Verdana, 'Open Sans';
                 letter-spacing: 0px;
+                text-align: center;
                 color: #000000;
-                margin: 0;
+                margin: 0 auto;
             }
         }
 
         >.otp-modal-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             border-top: 1px solid #dee2e6;
             border-bottom: 1px solid #dee2e6;
 
-            >.otp-label,
-            >.otp-help {
+            >.otp-subtitle {
                 display: block;
+                font: normal normal normal 14px/20px Arial;
+                letter-spacing: 0.46px;
+                text-align: center;
+                color: #000000;
+                margin: 0 auto 1.5rem auto;
             }
 
             >.otp-label {
+                display: block;
                 font: normal normal normal 14px / 22px Manrope, Verdana, 'Open Sans';
                 letter-spacing: 0.46px;
                 padding: 0 10px;
+                text-align: center;
                 color: #000000;
+                margin-top: 1.5rem;
                 margin-bottom: 0.5rem;
-            }
-
-            >.otp-help {
-                font: normal normal normal 12px / 16px Manrope, Verdana, 'Open Sans';
-                letter-spacing: 0.4px;
-                padding: 0 10px;
-                color: #6c757d;
             }
 
             >.otp-char-container {
                 display: flex;
                 flex-direction: row;
-                justify-content: flex-start;
+                justify-content: center;
                 align-items: center;
                 padding: 0 10px;
 
@@ -111,7 +111,7 @@
                     padding-left: 0.75rem;
                     padding-right: 0.75rem;
                     padding-top: 0.375rem;
-                    margin: 0 0.5rem 0.5rem 0;
+                    margin: 0 0.5rem 0 0;
                     transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
                     user-select: none;
                     text-transform: none;
@@ -132,11 +132,13 @@
             >.otp-alert {
                 display: none;
                 position: relative;
+                width: 100%;
                 padding: .75rem 1.25rem;
                 margin-top: 1rem;
                 border: 1px solid transparent;
                 border-radius: .25rem;
                 font: normal normal normal 12px / 16px Manrope, Verdana, 'Open Sans';
+                text-align: center;
             }
 
         }
@@ -148,8 +150,7 @@
             align-items: center;
             background-color: #f1f1f1;
 
-            >.otp-resend-btn-footer,
-            >.otp-validate-btn-footer {
+            >.otp-validate-btn {
                 border-color: #3C06D9;
                 color: #3C06D9;
                 display: inline-flex;
@@ -192,9 +193,6 @@
 
             }
 
-            .otp-validate-btn-footer {
-                margin-left: 0.5rem;
-            }
         }
 
     }
@@ -208,6 +206,12 @@
                         color: #856404;
                         background-color: #fff3cd;
                         border-color: #ffeeba;
+
+                        >.otp-resend-btn {
+                            text-decoration: underline !important;
+                            font-weight: bold !important;
+                            cursor: pointer !important;
+                        }
                     }
                 }
             }
@@ -231,7 +235,7 @@
 
     &.visible {
         >.otp-modal {
-            >.otp-modal-header {
+            >.otp-modal-body {
                 .otp-timeout {
                     --size: 128px;
                     --half-size: calc(var(--size) / 2);

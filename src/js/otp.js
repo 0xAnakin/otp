@@ -29,11 +29,11 @@
         },
         i18n: {
             title: 'Σύνδεση',
+            subtitle: 'Παρακαλώ εισάγετε τον κωδικό<br/>μιας χρήσης που σας έχει αποσταλλεί.',
             label: 'Κωδικός μια χρήσης',
-            help: 'Παρακαλώ εισάγετε τον κωδικό μιας χρήσης που σας έχει αποσταλλεί.',
-            resend: 'ΕΠΑΝΑΠΟΣΤΟΛΗ',
+            resend: 'Πατήστε εδώ για αποστολή νέου κωδικού.',
             validate: 'ΣΥΝΕΧΕΙΑ',
-            expired: 'O κωδικός που στάλθηκε έχει λήξει.',
+            expired: 'O κωδικός που στάλθηκε έχει λήξει.<br/>',
             invalid: 'O κωδικός δεν είναι σωστός.'
         },
         events: {
@@ -63,7 +63,7 @@
         const charArr = [];
         const instance = {};
         const { name, length, i18n, animation } = options;
-        const { title, label, help, expired, invalid, resend, validate } = i18n;
+        const { title, subtitle, label, expired, invalid, resend, validate } = i18n;
 
         const onSubmit = function (evt) {
             evt.preventDefault();
@@ -88,12 +88,13 @@
                 <div class="otp-modal">
                     <div class="otp-modal-header">
                         <h3 class="otp-title">${title}</h3>
+                    </div>
+                    <div class="otp-modal-body">
+                        <p class="otp-subtitle">${subtitle}</p>
                         <svg width="64" height="64" viewBox="0 0 128 128" class="otp-timeout">
                             <circle class="bg"></circle>
                             <circle class="fg"></circle>
                         </svg>
-                    </div>
-                    <div class="otp-modal-body">
                         <label class="otp-label">${label}</label>
                         <div class="otp-char-container">
                             ${(() => {
@@ -108,13 +109,11 @@
 
             })()}
                         </div>
-                        <small class="otp-help">${help}</small>
                         <div class="otp-alert otp-invalid">${invalid}</div>
-                        <div class="otp-alert otp-expired">${expired}</div>
+                        <div class="otp-alert otp-expired">${expired}<span class="otp-resend-btn">${resend}</span></div>
                     </div>
                     <div class="otp-modal-footer">
-                        <button class="otp-resend-btn-footer">${resend}</button>
-                        <button class="otp-validate-btn-footer" disabled>${validate}</button>
+                        <button class="otp-validate-btn" disabled>${validate}</button>
                     </div>
                 </div>
                 <input class="otp-input" name="${name}" type="hidden" />
@@ -134,9 +133,9 @@
 
         instance.$input = instance.$otp.find('.otp-input');
 
-        instance.$resend = instance.$otp.find('.otp-resend-btn-footer');
+        instance.$resend = instance.$otp.find('.otp-resend-btn');
 
-        instance.$validate = instance.$otp.find('.otp-validate-btn-footer');
+        instance.$validate = instance.$otp.find('.otp-validate-btn');
 
         instance.$chars.on('keydown', function (evt) {
 
@@ -293,12 +292,16 @@
 
         instance.$input.on('otp:change', function (evt) {
 
-            const $this = $(this);
+            if ((instance.expires !== null) && (Date.now() < instance.expires)) {
 
-            if ($this.val().length === length) {
-                instance.$validate.prop('disabled', false);
-            } else {
-                instance.$validate.prop('disabled', true);
+                const $this = $(this);
+
+                if ($this.val().length === length) {
+                    instance.$validate.prop('disabled', false);
+                } else {
+                    instance.$validate.prop('disabled', true);
+                }
+
             }
 
         });
@@ -320,6 +323,7 @@
 
                             clearInterval(instance.interval);
 
+                            instance.$validate.prop('disabled', true);
                             instance.$otp.addClass('expired');
 
                         }
@@ -445,16 +449,16 @@
         instance.validate = async function () {
 
             try {
-                
+
                 const { validateOTP } = this.options.fetch;
-                
+
                 if (validateOTP.options.method.toLowerCase() === 'post') {
 
                     const url = new URL(validateOTP.url);
                     const payload = JSON.stringify({ [name]: instance.$input.val() })
                     const resp = await fetch(url, { ...validateOTP.options, body: payload });
                     const data = await resp.json();
-    
+
                     return this.options.events.onValidate.call(this, data);
 
                 } else {
@@ -462,10 +466,10 @@
                     const url = new URL(validateOTP.url);
 
                     url.searchParams.set(name, instance.$input.val());
-                    
+
                     const resp = await fetch(url, validateOTP.options);
                     const data = await resp.json();
-    
+
                     return this.options.events.onValidate.call(this, data);
 
                 }
@@ -486,23 +490,26 @@
 
                 instance.$otp.removeClass('visible expired invalid');
                 instance.$timeout.css('animation-duration', '');
+                instance.$chars.val('');
+                instance.$input.val('');
                 instance.interval = null;
                 instance.duration = null;
                 instance.requested = null;
                 instance.expires = null;
-                instance.active = false;
                 instance.requested = Date.now();
                 instance.$resend.prop('disabled', true);
 
                 await instance.request();
 
                 instance.$resend.prop('disabled', false);
+                instance.$validate.prop('disabled', false);
                 instance.interval = setInterval(() => {
 
                     if (Date.now() >= instance.expires) {
 
                         clearInterval(instance.interval);
 
+                        instance.$validate.prop('disabled', true);
                         instance.$otp.addClass('expired');
 
                     }
