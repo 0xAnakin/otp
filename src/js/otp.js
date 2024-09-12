@@ -388,7 +388,7 @@
                         if (fx.prop === 'transform') {
                             instance.$modal.css('transform', `translateX(-50%) translateY(-${(50 + now)}%)`);
                         }
-                    },                    
+                    },
                 });
                 instance.$otp.stop(true, false).fadeOut(animation.fade, function () {
 
@@ -445,12 +445,30 @@
         instance.validate = async function () {
 
             try {
-
+                
                 const { validateOTP } = this.options.fetch;
-                const resp = await fetch(validateOTP.url, validateOTP.options);
-                const data = await resp.json();
+                
+                if (validateOTP.options.method.toLowerCase() === 'post') {
 
-                return this.options.events.onValidate.call(this, data);
+                    const url = new URL(validateOTP.url);
+                    const payload = JSON.stringify({ [name]: instance.$input.val() })
+                    const resp = await fetch(url, { ...validateOTP.options, body: payload });
+                    const data = await resp.json();
+    
+                    return this.options.events.onValidate.call(this, data);
+
+                } else {
+
+                    const url = new URL(validateOTP.url);
+
+                    url.searchParams.set(name, instance.$input.val());
+                    
+                    const resp = await fetch(url, validateOTP.options);
+                    const data = await resp.json();
+    
+                    return this.options.events.onValidate.call(this, data);
+
+                }
 
             } catch (err) {
                 console.error(`An error occurred because of ${err.message}, while validating an one time password!`);
