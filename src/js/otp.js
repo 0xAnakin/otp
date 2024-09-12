@@ -98,23 +98,23 @@
                         <div class="otp-char-container">
                             ${(() => {
 
-                const arr = [];
+                                const arr = [];
 
-                for (let i = 0; i < length; i++) {
-                    arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
-                }
+                                for (let i = 0; i < length; i++) {
+                                    arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
+                                }
 
-                return arr.join('\n');
+                                return arr.join('\n');
 
-            })()}
+                            })()}
                         </div>
                         <small class="otp-help">${help}</small>
                         <div class="otp-alert otp-invalid">${invalid}</div>
                         <div class="otp-alert otp-expired">${expired}</div>
                     </div>
                     <div class="otp-modal-footer">
-                        <button class="otp-resend-btn-footer">${resend}</button>
-                        <button class="otp-validate-btn-footer" disabled>${validate}</button>
+                        <button class="otp-resend-btn">${resend}</button>
+                        <button class="otp-validate-btn" disabled>${validate}</button>
                     </div>
                 </div>
                 <input class="otp-input" name="${name}" type="hidden" />
@@ -134,9 +134,9 @@
 
         instance.$input = instance.$otp.find('.otp-input');
 
-        instance.$resend = instance.$otp.find('.otp-resend-btn-footer');
+        instance.$resend = instance.$otp.find('.otp-resend-btn');
 
-        instance.$validate = instance.$otp.find('.otp-validate-btn-footer');
+        instance.$validate = instance.$otp.find('.otp-validate-btn');
 
         instance.$chars.on('keydown', function (evt) {
 
@@ -490,7 +490,6 @@
                 instance.duration = null;
                 instance.requested = null;
                 instance.expires = null;
-                instance.active = false;
                 instance.requested = Date.now();
                 instance.$resend.prop('disabled', true);
 

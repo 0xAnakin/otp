@@ -148,8 +148,8 @@
             align-items: center;
             background-color: #f1f1f1;
 
-            >.otp-resend-btn-footer,
-            >.otp-validate-btn-footer {
+            >.otp-resend-btn,
+            >.otp-validate-btn {
                 border-color: #3C06D9;
                 color: #3C06D9;
                 display: inline-flex;
@@ -192,7 +192,7 @@
 
             }
 
-            .otp-validate-btn-footer {
+            .otp-validate-btn {
                 margin-left: 0.5rem;
             }
         }
