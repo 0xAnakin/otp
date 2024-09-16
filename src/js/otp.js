@@ -66,8 +66,12 @@
         const { title, subtitle, label, expired, invalid, resend, validate } = i18n;
 
         const onSubmit = function (evt) {
+            
             evt.preventDefault();
             evt.stopImmediatePropagation();
+
+            instance.show();
+
         }
 
         instance.interval = null;
@@ -583,6 +587,7 @@
                 }
 
             });
+
         }
 
         this.data('otp', instance)
