@@ -318,8 +318,8 @@
             if ((instance.expires !== null) && (Date.now() < instance.expires)) {
 
                 const $this = $(this);
-
-                if ($this.val().length === length) {
+                
+                if ($this.val().length === chars) {
                     instance.$validate.prop('disabled', false);
                 } else {
                     instance.$validate.prop('disabled', true);
@@ -498,7 +498,7 @@
                 }
 
             } catch (err) {
-                console.error(`An error occurred because of ${err.message}, while validating an one time password!`);
+                console.error(`Error while validating an one time password: ${err.message}`);
             }
 
             return false;
@@ -554,7 +554,7 @@
                 instance.requested = null;
                 instance.expires = null;
 
-                console.error(`An error occurred because of ${err.message}, while requesting a new one time password!`);
+                console.error(`Error while requesting a new one time password: ${err.message}`);
 
             }
 
@@ -621,10 +621,11 @@
 
         }
 
-        this.data('otp', instance)
-        this.append(instance.$otp);
+        instance.$container.data('otp', instance)
+        
+        $(document.body).append(instance.$otp);
 
-        return this;
+        return instance.$container;
 
     };
 
