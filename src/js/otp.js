@@ -2,7 +2,8 @@
 
     const defaults = {
         name: 'otp',
-        length: 4,
+        chars: 4,
+        regex: new RegExp(`^[a-zA-Z0-9]{1,1}`, 'g'),
         animation: {
             fade: 600,
             position: 600
@@ -70,7 +71,7 @@
 
         const charArr = [];
         const instance = {};
-        const { name, length, i18n, animation, events } = options;
+        const { name, chars, regex, i18n, animation, events } = options;
         const { title, subtitle, label, expired, invalid, resend, cancel, validate } = i18n;
 
         const onSubmit = function (evt) {
@@ -111,15 +112,15 @@
                         <div class="otp-char-container">
                             ${(() => {
 
-                                const arr = [];
+                const arr = [];
 
-                                for (let i = 0; i < length; i++) {
-                                    arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
-                                }
+                for (let i = 0; i < chars; i++) {
+                    arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
+                }
 
-                                return arr.join('\n');
+                return arr.join('\n');
 
-                            })()}
+            })()}
                         </div>
                         <div class="otp-alert otp-invalid">${invalid}</div>
                         <div class="otp-alert otp-expired">${expired}<span class="otp-resend-btn">${resend}</span></div>
@@ -154,18 +155,14 @@
 
         instance.$chars.on('keydown', function (evt) {
 
-            const $this = $(this);
-            const key = evt.key.toLowerCase();
-            const { selectionStart, selectionEnd } = this;
-
-            switch (key) {
+            switch (evt.key.toLowerCase()) {
 
                 case 'tab': {
 
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
 
-                    const $next = $this.next('.otp-char');
+                    const $next = $(this).next('.otp-char');
 
                     if ($next.length) {
                         $next.focus();
@@ -180,14 +177,23 @@
 
         });
 
+        instance.$chars.on('keypress', function (evt) {
+
+            if (!regex.test(evt.key)) {
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+            }
+
+        });
+
         instance.$chars.on('input', function (evt) {
 
             const $this = $(this);
             const index = $this.index();
             const value = $this.val();
-
+            
             if (value.length) {
-
+                
                 const $next = $this.next('.otp-char');
 
                 if ($next.length && !$next.val().length) {
@@ -206,10 +212,9 @@
         instance.$chars.on('keyup', function (evt) {
 
             const $this = $(this);
-            const key = evt.key.toLowerCase();
             const { selectionStart, selectionEnd } = this;
 
-            switch (key) {
+            switch (evt.key.toLowerCase()) {
 
                 case 'backspace': {
 
