@@ -83,6 +83,18 @@
 
         }
 
+        const generateInputChars = () => {
+
+            const arr = [];
+
+            for (let i = 0; i < chars; i++) {
+                arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
+            }
+
+            return arr.join('\n');
+
+        }
+
         instance.interval = null;
 
         instance.duration = null;
@@ -110,17 +122,7 @@
                         </svg>
                         <label class="otp-label">${label}</label>
                         <div class="otp-char-container">
-                            ${(() => {
-
-                const arr = [];
-
-                for (let i = 0; i < chars; i++) {
-                    arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
-                }
-
-                return arr.join('\n');
-
-            })()}
+                            ${generateInputChars()}
                         </div>
                         <div class="otp-alert otp-invalid">${invalid}</div>
                         <div class="otp-alert otp-expired">${expired}<span class="otp-resend-btn">${resend}</span></div>
@@ -179,7 +181,7 @@
 
         instance.$chars.on('keypress', function (evt) {
 
-            if (!regex.test(evt.key)) {
+            if (evt.key.match(regex) === null) {
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
             }
@@ -191,14 +193,8 @@
             const $this = $(this);
             const index = $this.index();
             const value = $this.val();
-            
-            if (value.length) {
-                
-                const $next = $this.next('.otp-char');
 
-                if ($next.length && !$next.val().length) {
-                    $next.focus();
-                }
+            if (value.length) {
 
                 charArr[index] = value;
 
@@ -283,27 +279,32 @@
                 }
 
                 case 'arrowleft': {
-
-                    const $prev = $this.prev('.otp-char');
-
-                    if ($prev.length) {
-                        $prev.focus();
-                        $prev.get(0).setSelectionRange(1, 1);
-                    }
-
                     break;
                 }
 
                 case 'arrowright': {
+                    break;
+                }
 
-                    const $next = $this.next('.otp-char');
+                case 'tab' : {
+                    break;
+                }
 
-                    if ($next.length) {
-                        $next.focus();
-                        $next.get(0).setSelectionRange(0, 0);
+                default: {
+
+                    if ($this.val().length) {
+
+                        const $next = $this.next('.otp-char');
+
+                        if ($next.length) {
+
+                            $next.focus();
+                            $next.get(0).setSelectionRange(0, 0);
+
+                        }
+
                     }
 
-                    break;
                 }
 
             }
