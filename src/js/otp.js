@@ -15,6 +15,15 @@
                     headers: {
                         'Content-Type': 'application/json',
                     }
+                },
+                onRequest: function (res) {
+
+                    const { duration } = res;
+                    const compensation = (Date.now() - this.requested) / 2;
+
+                    this.duration = duration;
+                    this.expires = (new Date((this.requested + (this.duration - compensation)))).getTime();
+
                 }
             },
             validateOTP: {
@@ -24,6 +33,15 @@
                     headers: {
                         'Content-Type': 'application/json',
                     }
+                },
+                onValidate: function (res) {
+
+                    if (('valid' in res) && (res.valid === true)) {
+                        return true;
+                    }
+
+                    return false;
+
                 }
             }
         },
@@ -33,26 +51,16 @@
             label: 'Κωδικός μια χρήσης',
             resend: 'Πατήστε εδώ για αποστολή νέου κωδικού.',
             validate: 'ΣΥΝΕΧΕΙΑ',
+            cancel: 'ΚΛΕΙΣΙΜΟ',
             expired: 'O κωδικός που στάλθηκε έχει λήξει.<br/>',
             invalid: 'O κωδικός δεν είναι σωστός.'
         },
         events: {
-            onRequest: function (res) {
+            onCancelClick: function (evt, instance) {
 
-                const { duration } = res;
-                const compensation = (Date.now() - this.requested) / 2;
+                evt.preventDefault();
 
-                this.duration = duration;
-                this.expires = (new Date((this.requested + (this.duration - compensation)))).getTime();
-
-            },
-            onValidate: function (res) {
-
-                if (('valid' in res) && (res.valid === true)) {
-                    return true;
-                }
-
-                return false;
+                instance.hide();
 
             }
         }
@@ -62,11 +70,11 @@
 
         const charArr = [];
         const instance = {};
-        const { name, length, i18n, animation } = options;
-        const { title, subtitle, label, expired, invalid, resend, validate } = i18n;
+        const { name, length, i18n, animation, events } = options;
+        const { title, subtitle, label, expired, invalid, resend, cancel, validate } = i18n;
 
         const onSubmit = function (evt) {
-            
+
             evt.preventDefault();
             evt.stopImmediatePropagation();
 
@@ -103,20 +111,21 @@
                         <div class="otp-char-container">
                             ${(() => {
 
-                const arr = [];
+                                const arr = [];
 
-                for (let i = 0; i < length; i++) {
-                    arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
-                }
+                                for (let i = 0; i < length; i++) {
+                                    arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
+                                }
 
-                return arr.join('\n');
+                                return arr.join('\n');
 
-            })()}
+                            })()}
                         </div>
                         <div class="otp-alert otp-invalid">${invalid}</div>
                         <div class="otp-alert otp-expired">${expired}<span class="otp-resend-btn">${resend}</span></div>
                     </div>
                     <div class="otp-modal-footer">
+                        ${((events.onCancelClick instanceof Function) ? `<button class="otp-cancel-btn">${cancel}</button>` : '')}
                         <button class="otp-validate-btn" disabled>${validate}</button>
                     </div>
                 </div>
@@ -138,6 +147,8 @@
         instance.$input = instance.$otp.find('.otp-input');
 
         instance.$resend = instance.$otp.find('.otp-resend-btn');
+
+        instance.$cancel = instance.$otp.find('.otp-cancel-btn');
 
         instance.$validate = instance.$otp.find('.otp-validate-btn');
 
@@ -446,7 +457,7 @@
             const resp = await fetch(requestOTP.url, requestOTP.options);
             const data = await resp.json();
 
-            this.options.events.onRequest.call(this, data);
+            this.options.fetch.requestOTP.onRequest.call(this, data);
 
         }.bind(instance);
 
@@ -463,7 +474,7 @@
                     const resp = await fetch(url, { ...validateOTP.options, body: payload });
                     const data = await resp.json();
 
-                    return this.options.events.onValidate.call(this, data);
+                    return this.options.fetch.validateOTP.onValidate.call(this, data);
 
                 } else {
 
@@ -474,7 +485,7 @@
                     const resp = await fetch(url, validateOTP.options);
                     const data = await resp.json();
 
-                    return this.options.events.onValidate.call(this, data);
+                    return this.options.fetch.validateOTP.onValidate.call(this, data);
 
                 }
 
@@ -540,6 +551,18 @@
             }
 
         });
+
+        if (instance.$cancel.length) {
+
+            instance.$cancel.on('click', function (evt) {
+
+                if (events.onCancelClick instanceof Function) {
+                    events.onCancelClick.call(this, evt, instance);
+                }
+
+            });
+
+        }
 
         if (instance.$form.length) {
 
