@@ -1,6 +1,6 @@
 (function ($) {
 
-    const defaults = {
+    const defaults = Object.freeze({
         name: 'otp',
         chars: 4,
         regex: new RegExp(`^[a-zA-Z0-9]{1,1}`, 'g'),
@@ -65,9 +65,11 @@
 
             }
         }
-    };
+    });
 
-    $.fn.OTP = function (options = defaults) {
+    $.fn.OTP = function (options = {}) {
+
+        options = $.extend(true, {}, defaults, options);
 
         const charArr = [];
         const instance = {};
