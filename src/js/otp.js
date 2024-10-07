@@ -1,5 +1,13 @@
 (function ($) {
 
+    function createURL(path, base = window.location.origin) {
+        try {
+          return new URL(path);
+        } catch (err) {
+          return new URL(path, base);
+        }
+      }
+
     const defaults = Object.freeze({
         name: 'otp',
         chars: 4,
@@ -477,7 +485,7 @@
 
                 if (validateOTP.options.method.toLowerCase() === 'post') {
 
-                    const url = new URL(validateOTP.url);
+                    const url = createURL(validateOTP.url);
                     const payload = JSON.stringify({ [name]: instance.$input.val() })
                     const resp = await fetch(url, { ...validateOTP.options, body: payload });
                     const data = await resp.json();
@@ -486,7 +494,7 @@
 
                 } else {
 
-                    const url = new URL(validateOTP.url);
+                    const url = createURL(validateOTP.url);
 
                     url.searchParams.set(name, instance.$input.val());
 
