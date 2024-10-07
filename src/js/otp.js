@@ -65,13 +65,13 @@
             invalid: 'O κωδικός δεν είναι σωστός.'
         },
         events: {
-            onCancelClick: function (evt, instance) {
+            // onCancelClick: function (evt, instance) {
 
-                evt.preventDefault();
+            //     evt.preventDefault();
 
-                instance.hide();
+            //     instance.hide();
 
-            }
+            // }
         }
     });
 
