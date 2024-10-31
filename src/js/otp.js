@@ -165,6 +165,8 @@
 
         instance.$validate = instance.$otp.find('.otp-validate-btn');
 
+        instance.$errorMessageContainer = instance.$otp.find('.otp-invalid');
+
         instance.$chars.on('keydown', function (evt) {
 
             switch (evt.key.toLowerCase()) {
@@ -449,39 +451,43 @@
 
         }
 
+        instance.setErrorMessage = function(msg = '') {
+            instance.$errorMessageContainer.text(msg);
+        }
+
         instance.destroy = function () {
 
             if (instance.$form.length) {
                 instance.$form.off('submit', onSubmit);
             }
 
-            this.$container.removeData('otp');
-            this.$otp.remove();
+            instance.$container.removeData('otp');
+            instance.$otp.remove();
 
-        }.bind(instance);
+        }
 
         instance.refresh = function () {
 
-            this.destroy();
-            this.$container.OTP(options);
+            instance.destroy();
+            instance.$container.OTP(options);
 
-        }.bind(instance);
+        }
 
         instance.request = async function () {
 
-            const { requestOTP } = this.options.fetch;
+            const { requestOTP } = instance.options.fetch;
             const resp = await fetch(requestOTP.url, requestOTP.options);
             const data = await resp.json();
 
-            this.options.fetch.requestOTP.onRequest.call(this, data);
+            instance.options.fetch.requestOTP.onRequest.call(instance, data);
 
-        }.bind(instance);
+        }
 
         instance.validate = async function () {
 
             try {
 
-                const { validateOTP } = this.options.fetch;
+                const { validateOTP } = instance.options.fetch;
 
                 if (validateOTP.options.method.toLowerCase() === 'post') {
 
@@ -490,7 +496,7 @@
                     const resp = await fetch(url, { ...validateOTP.options, body: payload });
                     const data = await resp.json();
 
-                    return this.options.fetch.validateOTP.onValidate.call(this, data);
+                    return instance.options.fetch.validateOTP.onValidate.call(instance, data);
 
                 } else {
 
@@ -501,7 +507,7 @@
                     const resp = await fetch(url, validateOTP.options);
                     const data = await resp.json();
 
-                    return this.options.fetch.validateOTP.onValidate.call(this, data);
+                    return instance.options.fetch.validateOTP.onValidate.call(instance, data);
 
                 }
 
