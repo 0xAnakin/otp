@@ -26,7 +26,65 @@
     <script>
         $(function () {
 
-            $('#otp-container').OTP();
+            $('#otp-container').OTP({
+                fetch: {
+                    requestOTP: {
+                        url: 'http://localhost:3001/api/request.json',
+                        options: {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: {
+                                firstName: 'Peter',
+                                lastName: 'Raditsas',
+                                age: 39
+                            }
+                        },
+                        onRequest: function (res) {
+
+                            const { duration } = res;
+                            const compensation = (Date.now() - this.requested) / 2;
+
+                            this.duration = duration;
+                            this.expires = (new Date((this.requested + (this.duration - compensation)))).getTime();
+
+                        }
+                    },
+                    validateOTP: {
+                        url: 'http://localhost:3001/api/validate.json',
+                        options: {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: {
+                                firstName: 'Peter',
+                                lastName: 'Raditsas',
+                                age: 39
+                            }
+                        },
+                        onValidate: function (res) {
+
+                            if (('valid' in res) && (res.valid === true)) {
+                                return true;
+                            }
+
+                            return false;
+
+                        }
+                    }
+                },
+                events: {
+                    onCancelClick: function (evt, instance) {
+
+                        evt.preventDefault();
+
+                        instance.hide();
+
+                    }
+                }
+            });
 
             window.otp = $('#otp-container').data('otp');
 

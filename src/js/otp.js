@@ -352,7 +352,7 @@
 
                     instance.interval = setInterval(() => {
 
-                        if (Date.now() >= instance.expires) {
+                        if (instance.expires !== null && Date.now() >= instance.expires) {
 
                             clearInterval(instance.interval);
 
@@ -478,11 +478,27 @@
             try {
 
                 const { requestOTP } = instance.options.fetch;
+                const { body, ...rest } = requestOTP.options;
                 const url = createURL(requestOTP.url);
-                const resp = await fetch(url, requestOTP.options);
-                const data = await resp.json();
-        
-                instance.options.fetch.requestOTP.onRequest.call(instance, data);
+
+                if (requestOTP.options.method.toLowerCase() === 'post') {
+    
+                    const resp = await fetch(url, {
+                        ...rest,
+                        body: body ? JSON.stringify(body) : undefined
+                    });
+                    const data = await resp.json();
+
+                    instance.options.fetch.requestOTP.onRequest.call(instance, data);
+
+                } else {
+
+                    const resp = await fetch(url, rest);
+                    const data = await resp.json();
+
+                    instance.options.fetch.requestOTP.onRequest.call(instance, data);
+
+                }
 
             } catch (err) {
                 console.error(`Error while requesting an one time password: ${err.message}`);
@@ -495,19 +511,19 @@
             try {
 
                 const { validateOTP } = instance.options.fetch;
+                const { body, ...rest } = validateOTP.options;
                 const url = createURL(validateOTP.url);
-
+                
                 if (validateOTP.options.method.toLowerCase() === 'post') {
-    
-                    const { body, ...rest } = validateOTP.options;
-                    const payload = JSON.stringify({
-                        ...body,
-                        [name]: instance.$input.val()
-                    });
+
                     const resp = await fetch(url, {
                         ...rest,
-                        body: payload
+                        body: body ? JSON.stringify({
+                            ...body,
+                            [name]: instance.$input.val()
+                        }) : undefined
                     });
+
                     const data = await resp.json();
 
                     return instance.options.fetch.validateOTP.onValidate.call(instance, data);
@@ -516,7 +532,7 @@
 
                     url.searchParams.set(name, instance.$input.val());
 
-                    const resp = await fetch(url, validateOTP.options);
+                    const resp = await fetch(url, rest);
                     const data = await resp.json();
 
                     return instance.options.fetch.validateOTP.onValidate.call(instance, data);
@@ -554,7 +570,7 @@
                 instance.$validate.prop('disabled', false);
                 instance.interval = setInterval(() => {
 
-                    if (Date.now() >= instance.expires) {
+                    if (instance.expires !== null && Date.now() >= instance.expires) {
 
                         clearInterval(instance.interval);
 
