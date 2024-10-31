@@ -130,7 +130,7 @@
             }
 
             >.otp-alert {
-                display: none;
+                display: none !important;
                 position: relative;
                 width: 100%;
                 padding: .75rem 1.25rem;
@@ -207,7 +207,7 @@
             >.otp-modal-body {
                 >.otp-alert {
                     &.otp-expired {
-                        display: block;
+                        display: block !important;
                         color: #856404;
                         background-color: #fff3cd;
                         border-color: #ffeeba;
@@ -228,7 +228,7 @@
             >.otp-modal-body {
                 >.otp-alert {
                     &.otp-invalid {
-                        display: block;
+                        display: block !important;
                         color: #721c24;
                         background-color: #f8d7da;
                         border-color: #f5c6cb;
