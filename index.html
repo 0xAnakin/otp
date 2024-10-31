@@ -65,10 +65,10 @@
                             }
                         },
                         onValidate: function (res) {
-
-                            if (('valid' in res) && (res.valid === true)) {
-                                return true;
-                            }
+                            this.setErrorMessage('SKATA STA MOUTRA')
+                            // if (('valid' in res) && (res.valid === true)) {
+                            //     return true;
+                            // }
 
                             return false;
 

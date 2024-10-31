@@ -431,6 +431,8 @@
 
                     clearInterval(instance.interval);
 
+                    instance.$chars.val('');
+                    instance.$input.val('');
                     instance.$otp.removeClass('visible expired invalid');
                     instance.$timeout.css('animation-duration', '');
                     instance.interval = null;
