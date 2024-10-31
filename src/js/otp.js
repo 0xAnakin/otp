@@ -2,11 +2,11 @@
 
     function createURL(path, base = window.location.origin) {
         try {
-          return new URL(path);
+            return new URL(path);
         } catch (err) {
-          return new URL(path, base);
+            return new URL(path, base);
         }
-      }
+    }
 
     const defaults = Object.freeze({
         name: 'otp',
@@ -298,7 +298,7 @@
                     break;
                 }
 
-                case 'tab' : {
+                case 'tab': {
                     break;
                 }
 
@@ -328,7 +328,7 @@
             if ((instance.expires !== null) && (Date.now() < instance.expires)) {
 
                 const $this = $(this);
-                
+
                 if ($this.val().length === chars) {
                     instance.$validate.prop('disabled', false);
                 } else {
@@ -451,7 +451,7 @@
 
         }
 
-        instance.setErrorMessage = function(msg = '') {
+        instance.setErrorMessage = function (msg = '') {
             instance.$errorMessageContainer.text(msg);
         }
 
@@ -475,11 +475,18 @@
 
         instance.request = async function () {
 
-            const { requestOTP } = instance.options.fetch;
-            const resp = await fetch(requestOTP.url, requestOTP.options);
-            const data = await resp.json();
+            try {
 
-            instance.options.fetch.requestOTP.onRequest.call(instance, data);
+                const { requestOTP } = instance.options.fetch;
+                const url = createURL(requestOTP.url);
+                const resp = await fetch(url, requestOTP.options);
+                const data = await resp.json();
+        
+                instance.options.fetch.requestOTP.onRequest.call(instance, data);
+
+            } catch (err) {
+                console.error(`Error while requesting an one time password: ${err.message}`);
+            }
 
         }
 
@@ -488,19 +495,24 @@
             try {
 
                 const { validateOTP } = instance.options.fetch;
+                const url = createURL(validateOTP.url);
 
                 if (validateOTP.options.method.toLowerCase() === 'post') {
-
-                    const url = createURL(validateOTP.url);
-                    const payload = JSON.stringify({ [name]: instance.$input.val() })
-                    const resp = await fetch(url, { ...validateOTP.options, body: payload });
+    
+                    const { body, ...rest } = validateOTP.options;
+                    const payload = JSON.stringify({
+                        ...body,
+                        [name]: instance.$input.val()
+                    });
+                    const resp = await fetch(url, {
+                        ...rest,
+                        body: payload
+                    });
                     const data = await resp.json();
 
                     return instance.options.fetch.validateOTP.onValidate.call(instance, data);
 
                 } else {
-
-                    const url = createURL(validateOTP.url);
 
                     url.searchParams.set(name, instance.$input.val());
 
@@ -517,7 +529,7 @@
 
             return false;
 
-        }.bind(instance);
+        }
 
         instance.$resend.on('click', async function (evt) {
 
@@ -636,7 +648,7 @@
         }
 
         instance.$container.data('otp', instance)
-        
+
         $(document.body).append(instance.$otp);
 
         return instance.$container;
