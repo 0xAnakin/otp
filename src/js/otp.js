@@ -61,8 +61,9 @@
             resend: 'Πατήστε εδώ για αποστολή νέου κωδικού.',
             validate: 'ΣΥΝΕΧΕΙΑ',
             cancel: 'ΚΛΕΙΣΙΜΟ',
+            retry: 'ΕΠΑΝΑΛΗΨΗ',
             expired: 'O κωδικός που στάλθηκε έχει λήξει.<br/>',
-            invalid: 'O κωδικός δεν είναι σωστός.'
+            invalid: 'Απρόσμενο λάθος.'
         },
         events: {
             // onCancelClick: function (evt, instance) {
@@ -81,8 +82,8 @@
 
         const charArr = [];
         const instance = {};
-        const { name, chars, regex, i18n, animation, events } = options;
-        const { title, subtitle, label, expired, invalid, resend, cancel, validate } = i18n;
+        const { name, regex, i18n, animation, events } = options;
+        const { title, subtitle, label, expired, invalid, resend, cancel, validate, retry } = i18n;
 
         const onSubmit = function (evt) {
 
@@ -93,15 +94,175 @@
 
         }
 
-        const generateInputChars = () => {
+        const generateInputChars = (len = options.chars) => {
 
             const arr = [];
 
-            for (let i = 0; i < chars; i++) {
+            for (let i = 0; i < len; i++) {
                 arr.push(`<input class="otp-char otp-char-${i}" type="text" maxlength="1" autocorrect="off" autocomplete="off" />`);
             }
 
             return arr.join('\n');
+
+        }
+
+        const attachCharEventListeners = () => {
+
+            instance.$chars.on('keydown', function (evt) {
+
+                switch (evt.key.toLowerCase()) {
+
+                    case 'tab': {
+
+                        evt.preventDefault();
+                        evt.stopImmediatePropagation();
+
+                        const $next = $(this).next('.otp-char');
+
+                        if ($next.length) {
+                            $next.focus();
+                            $next.get(0).setSelectionRange(0, 0);
+                        }
+
+                        break;
+
+                    }
+
+                }
+
+            });
+
+            instance.$chars.on('keypress', function (evt) {
+
+                if (evt.key.match(regex) === null) {
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
+                }
+
+            });
+
+            instance.$chars.on('input', function (evt) {
+
+                const $this = $(this);
+                const index = $this.index();
+                const value = $this.val();
+
+                if (value.length) {
+
+                    charArr[index] = value;
+
+                    instance.$input.val(charArr.join(''));
+                    instance.$input.trigger('otp:change');
+
+                }
+
+            });
+
+            instance.$chars.on('keyup', function (evt) {
+
+                const $this = $(this);
+                const { selectionStart, selectionEnd } = this;
+
+                switch (evt.key.toLowerCase()) {
+
+                    case 'backspace': {
+
+                        const index = $this.index();
+                        const $prev = $this.prev('.otp-char');
+
+                        if ((selectionStart === 0) || (selectionEnd === 0)) {
+                            evt.preventDefault();
+                            evt.stopImmediatePropagation();
+                        }
+
+                        if ($prev.length) {
+                            $prev.focus();
+                            $prev.get(0).setSelectionRange(1, 1);
+                        }
+
+                        charArr[index] = '';
+
+                        instance.$input.val(charArr.join(''));
+                        instance.$input.trigger('otp:change');
+
+                        break;
+                    }
+
+                    case 'delete': {
+
+                        const index = $this.index();
+                        const $nextAll = $this.nextAll('.otp-char');
+
+                        if ($nextAll.length) {
+
+                            if ((selectionStart === 0) || (selectionEnd === 0)) {
+
+                                const value = $this.next().val();
+
+                                charArr[index] = value;
+
+                                $this.val(value);
+
+                            }
+
+                            $nextAll.each(function (index, el) {
+
+                                const $el = $(el);
+                                const value = $el.next().val();
+                                const $next = $el.next('.otp-char');
+
+                                if (!$next.length || !$next.val()) {
+                                    $el.val('');
+                                } else {
+                                    $el.val($next.val());
+                                }
+
+                                $this.get(0).setSelectionRange(selectionStart, selectionEnd);
+
+                                charArr[index] = value;
+
+                            })
+
+                            instance.$input.val(charArr.join(''));
+                            instance.$input.trigger('otp:change');
+
+                        }
+
+                        break;
+                    }
+
+                    case 'arrowleft': {
+                        break;
+                    }
+
+                    case 'arrowright': {
+                        break;
+                    }
+
+                    case 'tab': {
+                        break;
+                    }
+
+                    default: {
+
+                        if ($this.val().length) {
+
+                            const $next = $this.next('.otp-char');
+
+                            if ($next.length) {
+
+                                $next.focus();
+                                $next.get(0).setSelectionRange(0, 0);
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            });
 
         }
 
@@ -130,15 +291,16 @@
                             <circle class="bg"></circle>
                             <circle class="fg"></circle>
                         </svg>
-                        <label class="otp-label">${label}</label>
-                        <div class="otp-char-container">
-                            ${generateInputChars()}
+                        <div>
+                            <div class="otp-char-container"></div>
+                            <label class="otp-label">${label}</label>
                         </div>
                         <div class="otp-alert otp-invalid">${invalid}</div>
                         <div class="otp-alert otp-expired">${expired}<span class="otp-resend-btn">${resend}</span></div>
                     </div>
                     <div class="otp-modal-footer">
                         ${((events.onCancelClick instanceof Function) ? `<button class="otp-cancel-btn">${cancel}</button>` : '')}
+                        <button class="otp-retry-btn" disabled>${retry}</button>
                         <button class="otp-validate-btn" disabled>${validate}</button>
                     </div>
                 </div>
@@ -155,6 +317,8 @@
 
         instance.$timeout = instance.$otp.find('.otp-timeout');
 
+        instance.$charsContainer = instance.$otp.find('.otp-char-container');
+
         instance.$chars = instance.$otp.find('.otp-char');
 
         instance.$input = instance.$otp.find('.otp-input');
@@ -163,165 +327,20 @@
 
         instance.$cancel = instance.$otp.find('.otp-cancel-btn');
 
+        instance.$retry = instance.$otp.find('.otp-retry-btn');
+
         instance.$validate = instance.$otp.find('.otp-validate-btn');
 
         instance.$errorMessageContainer = instance.$otp.find('.otp-invalid');
 
-        instance.$chars.on('keydown', function (evt) {
-
-            switch (evt.key.toLowerCase()) {
-
-                case 'tab': {
-
-                    evt.preventDefault();
-                    evt.stopImmediatePropagation();
-
-                    const $next = $(this).next('.otp-char');
-
-                    if ($next.length) {
-                        $next.focus();
-                        $next.get(0).setSelectionRange(0, 0);
-                    }
-
-                    break;
-
-                }
-
-            }
-
-        });
-
-        instance.$chars.on('keypress', function (evt) {
-
-            if (evt.key.match(regex) === null) {
-                evt.preventDefault();
-                evt.stopImmediatePropagation();
-            }
-
-        });
-
-        instance.$chars.on('input', function (evt) {
-
-            const $this = $(this);
-            const index = $this.index();
-            const value = $this.val();
-
-            if (value.length) {
-
-                charArr[index] = value;
-
-                instance.$input.val(charArr.join(''));
-                instance.$input.trigger('otp:change');
-
-            }
-
-        });
-
-        instance.$chars.on('keyup', function (evt) {
-
-            const $this = $(this);
-            const { selectionStart, selectionEnd } = this;
-
-            switch (evt.key.toLowerCase()) {
-
-                case 'backspace': {
-
-                    const index = $this.index();
-                    const $prev = $this.prev('.otp-char');
-
-                    if ((selectionStart === 0) || (selectionEnd === 0)) {
-                        evt.preventDefault();
-                        evt.stopImmediatePropagation();
-                    }
-
-                    if ($prev.length) {
-                        $prev.focus();
-                        $prev.get(0).setSelectionRange(1, 1);
-                    }
-
-                    charArr[index] = '';
-
-                    instance.$input.val(charArr.join(''));
-                    instance.$input.trigger('otp:change');
-
-                    break;
-                }
-
-                case 'delete': {
-
-                    const index = $this.index();
-                    const $nextAll = $this.nextAll('.otp-char');
-
-                    if ($nextAll.length) {
-
-                        if ((selectionStart === 0) || (selectionEnd === 0)) {
-
-                            const value = $this.next().val();
-
-                            charArr[index] = value;
-
-                            $this.val(value);
-
-                        }
-
-                        $nextAll.each(function (index, el) {
-
-                            const $el = $(el);
-                            const value = $el.next().val();
-                            const $next = $el.next('.otp-char');
-
-                            if (!$next.length || !$next.val()) {
-                                $el.val('');
-                            } else {
-                                $el.val($next.val());
-                            }
-
-                            $this.get(0).setSelectionRange(selectionStart, selectionEnd);
-
-                            charArr[index] = value;
-
-                        })
-
-                        instance.$input.val(charArr.join(''));
-                        instance.$input.trigger('otp:change');
-
-                    }
-
-                    break;
-                }
-
-                case 'arrowleft': {
-                    break;
-                }
-
-                case 'arrowright': {
-                    break;
-                }
-
-                case 'tab': {
-                    break;
-                }
-
-                default: {
-
-                    if ($this.val().length) {
-
-                        const $next = $this.next('.otp-char');
-
-                        if ($next.length) {
-
-                            $next.focus();
-                            $next.get(0).setSelectionRange(0, 0);
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-        });
+        /**
+         * 
+         * Not used because chars are
+         * rendered from server response 
+         * 
+         * attachCharEventListeners(); 
+         * 
+         */
 
         instance.$input.on('otp:change', function (evt) {
 
@@ -329,7 +348,7 @@
 
                 const $this = $(this);
 
-                if ($this.val().length === chars) {
+                if ($this.val().length === options.chars) {
                     instance.$validate.prop('disabled', false);
                 } else {
                     instance.$validate.prop('disabled', true);
@@ -370,18 +389,16 @@
 
                     clearInterval(instance.interval);
 
-                    instance.$resend.prop('disabled', false);
-                    instance.$otp.removeClass('visible expired invalid');
+                    instance.$retry.prop('disabled', false);
+                    instance.$otp.removeClass('expired').addClass('invalid retry');
                     instance.$timeout.css('animation-duration', '');
                     instance.interval = null;
                     instance.duration = null;
                     instance.requested = null;
                     instance.expires = null;
-                    instance.active = false;
 
-                    console.error(`An error occurred because of ${err.message}, while requesting an one time password!`);
+                    console.warn(`An error occurred because of ${err.message}, while requesting an one time password!`);
 
-                    return;
                 }
 
                 instance.$otp.trigger('otp:show');
@@ -433,7 +450,9 @@
 
                     instance.$chars.val('');
                     instance.$input.val('');
-                    instance.$otp.removeClass('visible expired invalid');
+                    instance.$otp.removeClass('visible expired invalid retry');
+                    instance.$retry.prop('disabled', true);
+                    instance.$validate.prop('disabled', true);
                     instance.$timeout.css('animation-duration', '');
                     instance.interval = null;
                     instance.duration = null;
@@ -453,8 +472,16 @@
 
         }
 
-        instance.setErrorMessage = function (msg = '') {
-            instance.$errorMessageContainer.text(msg);
+        instance.setErrorMessage = function (err) {
+
+            if (err instanceof Error) {
+                instance.$errorMessageContainer.text(err.message);
+                throw err;
+            } else {
+                instance.$errorMessageContainer.text(err);
+                throw new Error(err);
+            }
+
         }
 
         instance.destroy = function () {
@@ -484,26 +511,54 @@
                 const url = createURL(requestOTP.url);
 
                 if (requestOTP.options.method.toLowerCase() === 'post') {
-    
+
                     const resp = await fetch(url, {
                         ...rest,
                         body: body ? JSON.stringify(body) : undefined
                     });
                     const data = await resp.json();
 
-                    instance.options.fetch.requestOTP.onRequest.call(instance, data);
+                    if (('length' in data) && Number.isInteger(data.length) && data.length > 0) {
+
+                        options.chars = data.length;
+
+                        instance.$chars = $(generateInputChars(data.length));
+                        instance.$charsContainer.empty();
+                        instance.$charsContainer.append(instance.$chars);
+
+                        attachCharEventListeners();
+
+                    }
+
+                    instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined);
 
                 } else {
 
                     const resp = await fetch(url, rest);
                     const data = await resp.json();
 
-                    instance.options.fetch.requestOTP.onRequest.call(instance, data);
+                    if (('length' in data) && Number.isInteger(data.length) && data.length > 0) {
+
+                        options.chars = data.length;
+
+                        instance.$chars = $(generateInputChars(data.length));
+                        instance.$charsContainer.empty();
+                        instance.$charsContainer.append(instance.$chars);
+
+                        attachCharEventListeners();
+
+                    }
+
+                    instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined);
 
                 }
 
             } catch (err) {
-                console.error(`Error while requesting an one time password: ${err.message}`);
+
+                console.warn(`Error while requesting an one time password: ${err.message}`);
+
+                instance.options.fetch.requestOTP.onRequest.call(instance, undefined, err);
+
             }
 
         }
@@ -515,7 +570,7 @@
                 const { validateOTP } = instance.options.fetch;
                 const { body, ...rest } = validateOTP.options;
                 const url = createURL(validateOTP.url);
-                
+
                 if (validateOTP.options.method.toLowerCase() === 'post') {
 
                     const resp = await fetch(url, {
@@ -528,7 +583,7 @@
 
                     const data = await resp.json();
 
-                    return instance.options.fetch.validateOTP.onValidate.call(instance, data);
+                    instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined);
 
                 } else {
 
@@ -537,15 +592,17 @@
                     const resp = await fetch(url, rest);
                     const data = await resp.json();
 
-                    return instance.options.fetch.validateOTP.onValidate.call(instance, data);
+                    instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined);
 
                 }
 
             } catch (err) {
-                console.error(`Error while validating an one time password: ${err.message}`);
-            }
 
-            return false;
+                console.warn(`Error while validating an one time password: ${err.message}`);
+
+                instance.options.fetch.validateOTP.onValidate.call(instance, undefined, err);
+
+            }
 
         }
 
@@ -555,7 +612,7 @@
 
                 clearInterval(instance.interval);
 
-                instance.$otp.removeClass('visible expired invalid');
+                instance.$otp.removeClass('visible expired invalid retry');
                 instance.$timeout.css('animation-duration', '');
                 instance.$chars.val('');
                 instance.$input.val('');
@@ -564,12 +621,12 @@
                 instance.requested = null;
                 instance.expires = null;
                 instance.requested = Date.now();
-                instance.$resend.prop('disabled', true);
 
                 await instance.request();
 
-                instance.$resend.prop('disabled', false);
+                instance.$retry.prop('disabled', true);
                 instance.$validate.prop('disabled', false);
+
                 instance.interval = setInterval(() => {
 
                     if (instance.expires !== null && Date.now() >= instance.expires) {
@@ -590,18 +647,21 @@
 
                 clearInterval(instance.interval);
 
-                instance.$resend.prop('disabled', false);
-                instance.$otp.removeClass('visible expired invalid');
+                instance.$retry.prop('disabled', false);
+                instance.$validate.prop('disabled', true);
+                instance.$otp.removeClass('expired').addClass('invalid retry');
                 instance.$timeout.css('animation-duration', '');
                 instance.interval = null;
                 instance.duration = null;
                 instance.requested = null;
                 instance.expires = null;
 
-                console.error(`Error while requesting a new one time password: ${err.message}`);
-
             }
 
+        });
+
+        instance.$retry.on('click', function (evt) {
+            instance.$resend.trigger('click');
         });
 
         if (instance.$cancel.length) {
@@ -625,18 +685,22 @@
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
 
-                const valid = await instance.validate();
+                try {
 
-                if (valid) {
+                    await instance.validate();
 
                     instance.hide(() => {
                         instance.$otp.trigger('otp:valid');
                         instance.$form.off('submit', onSubmit).submit();
                     });
 
-                } else {
+                } catch (err) {
+
+                    instance.$retry.prop('disabled', false);
+                    instance.$validate.prop('disabled', true);
+                    instance.$otp.removeClass('expired').addClass('invalid retry');
                     instance.$otp.trigger('otp:invalid');
-                    instance.$otp.addClass('invalid');
+
                 }
 
             });
@@ -648,17 +712,21 @@
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
 
-                const valid = await instance.validate();
+                try {
 
-                if (valid) {
+                    await instance.validate();
 
                     instance.hide(() => {
                         instance.$otp.trigger('otp:valid');
                     });
 
-                } else {
+                } catch (err) {
+
+                    instance.$retry.prop('disabled', false);
+                    instance.$validate.prop('disabled', true);
+                    instance.$otp.removeClass('expired').addClass('invalid retry');
                     instance.$otp.trigger('otp:invalid');
-                    instance.$otp.addClass('invalid');
+
                 }
 
             });
