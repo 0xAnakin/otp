@@ -472,7 +472,7 @@
 
         }
 
-        instance.setErrorMessage = function (err) {
+        instance.setErrorMessage = function (err = invalid) {
 
             if (err instanceof Error) {
                 instance.$errorMessageContainer.text(err.message);
