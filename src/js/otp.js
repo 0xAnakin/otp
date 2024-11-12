@@ -10,7 +10,7 @@
 
     const defaults = Object.freeze({
         name: 'otp',
-        chars: 4,
+        // chars: 4,
         regex: new RegExp(`^[a-zA-Z0-9]{1,1}`, 'g'),
         animation: {
             fade: 600,
@@ -25,13 +25,13 @@
                         'Content-Type': 'application/json',
                     }
                 },
-                onRequest: function (res) {
+                onRequest: function (res, err) {
 
-                    const { duration } = res;
-                    const compensation = (Date.now() - this.requested) / 2;
-
-                    this.duration = duration;
-                    this.expires = (new Date((this.requested + (this.duration - compensation)))).getTime();
+                    if (err) {
+                        this.setErrorMessage('Unexpected Request Error');
+                    } else {
+                        // examine res object for custom functionality or error message
+                    }
 
                 }
             },
@@ -43,13 +43,13 @@
                         'Content-Type': 'application/json',
                     }
                 },
-                onValidate: function (res) {
+                onValidate: function (res, err) {
 
-                    if (('valid' in res) && (res.valid === true)) {
-                        return true;
+                    if (err) {
+                        this.setErrorMessage('Unexpected Validation Error');
+                    } else if (res.valid !== true) {
+                        this.setErrorMessage('Invalid token provided');
                     }
-
-                    return false;
 
                 }
             }
@@ -80,7 +80,6 @@
 
         options = $.extend(true, {}, defaults, options);
 
-        const charArr = [];
         const instance = {};
         const { name, regex, i18n, animation, events } = options;
         const { title, subtitle, label, expired, invalid, resend, cancel, validate, retry } = i18n;
@@ -107,6 +106,8 @@
         }
 
         const attachCharEventListeners = () => {
+
+            const charArr = [];
 
             instance.$chars.on('keydown', function (evt) {
 
@@ -137,6 +138,14 @@
                 if (evt.key.match(regex) === null) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
+                } else {
+
+                    const { selectionStart, selectionEnd } = this;
+
+                    if ((selectionStart === 0) && (selectionEnd === 0)) {
+                        $(this).val('');
+                    }
+
                 }
 
             });
@@ -319,7 +328,7 @@
 
         instance.$charsContainer = instance.$otp.find('.otp-char-container');
 
-        instance.$chars = instance.$otp.find('.otp-char');
+        // instance.$chars = instance.$otp.find('.otp-char');
 
         instance.$input = instance.$otp.find('.otp-input');
 
@@ -348,9 +357,13 @@
 
                 const $this = $(this);
 
+                console.log($this.val().length, options.chars);
+
                 if ($this.val().length === options.chars) {
+                    instance.$retry.prop('disabled', false);
                     instance.$validate.prop('disabled', false);
                 } else {
+                    instance.$retry.prop('disabled', true);
                     instance.$validate.prop('disabled', true);
                 }
 
@@ -510,48 +523,45 @@
                 const { body, ...rest } = requestOTP.options;
                 const url = createURL(requestOTP.url);
 
+                let resp, data;
+
                 if (requestOTP.options.method.toLowerCase() === 'post') {
 
-                    const resp = await fetch(url, {
+                    resp = await fetch(url, {
                         ...rest,
                         body: body ? JSON.stringify(body) : undefined
                     });
-                    const data = await resp.json();
-
-                    if (('length' in data) && Number.isInteger(data.length) && data.length > 0) {
-
-                        options.chars = data.length;
-
-                        instance.$chars = $(generateInputChars(data.length));
-                        instance.$charsContainer.empty();
-                        instance.$charsContainer.append(instance.$chars);
-
-                        attachCharEventListeners();
-
-                    }
-
-                    instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined);
 
                 } else {
 
-                    const resp = await fetch(url, rest);
-                    const data = await resp.json();
-
-                    if (('length' in data) && Number.isInteger(data.length) && data.length > 0) {
-
-                        options.chars = data.length;
-
-                        instance.$chars = $(generateInputChars(data.length));
-                        instance.$charsContainer.empty();
-                        instance.$charsContainer.append(instance.$chars);
-
-                        attachCharEventListeners();
-
-                    }
-
-                    instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined);
-
+                    resp = await fetch(url, rest);
+                    
                 }
+
+                data = await resp.json();
+
+                if (!('duration' in data) || !Number.isInteger(data.duration) || (data.duration < 1)) {
+                    throw new Error('Invalid Server Response');
+                }
+
+                if (!('length') in data || !Number.isInteger(data.length) || (data.length < 1)) {
+                    throw new Error('Invalid Server Response');
+                }
+
+                const compensation = (Date.now() - instance.requested) / 2;
+
+                instance.duration = data.duration;
+                instance.expires = (new Date((instance.requested + (instance.duration - compensation)))).getTime();
+
+                options.chars = data.length;
+
+                instance.$chars = $(generateInputChars(data.length));
+                instance.$charsContainer.empty();
+                instance.$charsContainer.append(instance.$chars);
+
+                attachCharEventListeners();
+
+                instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined);
 
             } catch (err) {
 
@@ -571,9 +581,11 @@
                 const { body, ...rest } = validateOTP.options;
                 const url = createURL(validateOTP.url);
 
+                let resp, data;
+
                 if (validateOTP.options.method.toLowerCase() === 'post') {
 
-                    const resp = await fetch(url, {
+                    resp = await fetch(url, {
                         ...rest,
                         body: body ? JSON.stringify({
                             ...body,
@@ -581,20 +593,21 @@
                         }) : undefined
                     });
 
-                    const data = await resp.json();
-
-                    instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined);
-
                 } else {
 
                     url.searchParams.set(name, instance.$input.val());
 
-                    const resp = await fetch(url, rest);
-                    const data = await resp.json();
-
-                    instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined);
+                    resp = await fetch(url, rest);
 
                 }
+
+                data = await resp.json();
+
+                if (!('valid' in data) || (typeof data.valid !== 'boolean')) {
+                    throw new Error('Invalid Server Response');                     
+                }
+
+                instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined);
 
             } catch (err) {
 
@@ -614,8 +627,8 @@
 
                 instance.$otp.removeClass('visible expired invalid retry');
                 instance.$timeout.css('animation-duration', '');
-                instance.$chars.val('');
                 instance.$input.val('');
+                instance.$chars.val('');
                 instance.interval = null;
                 instance.duration = null;
                 instance.requested = null;
@@ -625,7 +638,7 @@
                 await instance.request();
 
                 instance.$retry.prop('disabled', true);
-                instance.$validate.prop('disabled', false);
+                instance.$validate.prop('disabled', true);
 
                 instance.interval = setInterval(() => {
 

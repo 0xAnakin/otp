@@ -44,17 +44,9 @@
                         onRequest: function (res, err) {
 
                             if (err) {
-                                this.setErrorMessage('Unexpected Network Error');
-                            } else if (('duration' in res) && Number.isInteger(res.duration)) {
-
-                                const { duration } = res;
-                                const compensation = (Date.now() - this.requested) / 2;
-
-                                this.duration = duration;
-                                this.expires = (new Date((this.requested + (this.duration - compensation)))).getTime();
-
+                                this.setErrorMessage('Unexpected Request Error');
                             } else {
-                                this.setErrorMessage('No duration in server response');
+                                // examine res object for custom functionality or error message
                             }
 
                         }
@@ -75,13 +67,9 @@
                         onValidate: function (res, err) {
 
                             if (err) {
-                                this.setErrorMessage('Unexpected Network Error');
-                            } else {
-                                if (!('valid' in res)) {
-                                    this.setErrorMessage('Invalid server response');
-                                } else if (res.valid !== true) {
-                                    this.setErrorMessage('Invalid token provided');
-                                }
+                                this.setErrorMessage('Unexpected Validation Error');
+                            } else if (res.valid !== true) {
+                                this.setErrorMessage('Invalid token provided');
                             }
 
                         }
