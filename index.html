@@ -44,9 +44,15 @@
                         onRequest: function (res, err) {
 
                             if (err) {
+                                
                                 this.setErrorMessage('Unexpected Request Error');
+
+                                return false;
+
                             } else {
-                                // examine res object for custom functionality or error message
+                                
+                                return true;
+
                             }
 
                         }
@@ -65,11 +71,23 @@
                             }
                         },
                         onValidate: function (res, err) {
-
+                            
                             if (err) {
+                            
                                 this.setErrorMessage('Unexpected Validation Error');
+                            
+                                return false;
+                            
                             } else if (res.valid !== true) {
+                            
                                 this.setErrorMessage('Invalid token provided');
+                            
+                                return false;
+                            
+                            } else {
+
+                                return true;
+
                             }
 
                         }

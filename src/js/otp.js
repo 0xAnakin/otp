@@ -28,9 +28,15 @@
                 onRequest: function (res, err) {
 
                     if (err) {
+                                
                         this.setErrorMessage('Unexpected Request Error');
+
+                        return false;
+
                     } else {
-                        // examine res object for custom functionality or error message
+                        // Examine further cases
+                        return true;
+
                     }
 
                 }
@@ -46,24 +52,36 @@
                 onValidate: function (res, err) {
 
                     if (err) {
+
                         this.setErrorMessage('Unexpected Validation Error');
+
+                        return false;
+
                     } else if (res.valid !== true) {
+
                         this.setErrorMessage('Invalid token provided');
+
+                        return false;
+
+                    } else {
+
+                        return true;
+
                     }
 
                 }
             }
         },
         i18n: {
-            title: 'Σύνδεση',
-            subtitle: 'Παρακαλώ εισάγετε τον κωδικό<br/>μιας χρήσης που σας έχει αποσταλλεί.',
-            label: 'Κωδικός μια χρήσης',
-            resend: 'Πατήστε εδώ για αποστολή νέου κωδικού.',
-            validate: 'ΣΥΝΕΧΕΙΑ',
-            cancel: 'ΚΛΕΙΣΙΜΟ',
-            retry: 'ΕΠΑΝΑΛΗΨΗ',
-            expired: 'O κωδικός που στάλθηκε έχει λήξει.<br/>',
-            invalid: 'Απρόσμενο λάθος.'
+            title: 'Login',
+            subtitle: 'Please enter the one-time password<br/>that has been sent to you.',
+            label: 'One-time password',
+            resend: 'Click here to resend the code.',
+            validate: 'CONTINUE',
+            cancel: 'CLOSE',
+            retry: 'RETRY',
+            expired: 'The code sent has expired.',
+            invalid: 'Unexpected error.'
         },
         events: {
             // onCancelClick: function (evt, instance) {
@@ -328,7 +346,7 @@
 
         instance.$charsContainer = instance.$otp.find('.otp-char-container');
 
-        // instance.$chars = instance.$otp.find('.otp-char');
+        instance.$chars = instance.$otp.find('.otp-char');
 
         instance.$input = instance.$otp.find('.otp-input');
 
@@ -380,37 +398,41 @@
                     instance.active = true;
                     instance.requested = Date.now();
 
-                    await instance.request();
+                    const data = await instance.request();
 
-                    instance.interval = setInterval(() => {
+                    if (instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined) === true) {
 
-                        if (instance.expires !== null && Date.now() >= instance.expires) {
+                        instance.interval = setInterval(() => {
 
-                            clearInterval(instance.interval);
+                            if (instance.expires !== null && Date.now() >= instance.expires) {
 
-                            instance.$validate.prop('disabled', true);
-                            instance.$otp.addClass('expired');
+                                clearInterval(instance.interval);
 
-                        }
+                                instance.$validate.prop('disabled', true);
+                                instance.$otp.addClass('expired');
 
-                    }, 1000);
+                            }
 
-                    instance.$timeout.css('animation-duration', `${instance.duration}ms`);
-                    instance.$otp.addClass('visible');
+                        }, 1000);
+
+                        instance.$timeout.css('animation-duration', `${instance.duration}ms`);
+                        instance.$otp.addClass('visible');
+
+                    }
 
                 } catch (err) {
 
                     clearInterval(instance.interval);
 
+                    instance.options.fetch.requestOTP.onRequest.call(instance, undefined, err);
+
                     instance.$retry.prop('disabled', false);
-                    instance.$otp.removeClass('expired').addClass('invalid retry');
+                    instance.$otp.addClass('retry');
                     instance.$timeout.css('animation-duration', '');
                     instance.interval = null;
                     instance.duration = null;
                     instance.requested = null;
                     instance.expires = null;
-
-                    console.warn(`An error occurred because of ${err.message}, while requesting an one time password!`);
 
                 }
 
@@ -489,11 +511,11 @@
 
             if (err instanceof Error) {
                 instance.$errorMessageContainer.text(err.message);
-                throw err;
             } else {
                 instance.$errorMessageContainer.text(err);
-                throw new Error(err);
             }
+
+            instance.$otp.addClass('invalid');
 
         }
 
@@ -517,105 +539,85 @@
 
         instance.request = async function () {
 
-            try {
+            const { requestOTP } = instance.options.fetch;
+            const { body, ...rest } = requestOTP.options;
+            const url = createURL(requestOTP.url);
 
-                const { requestOTP } = instance.options.fetch;
-                const { body, ...rest } = requestOTP.options;
-                const url = createURL(requestOTP.url);
+            let resp, data;
 
-                let resp, data;
+            if (requestOTP.options.method.toLowerCase() === 'post') {
 
-                if (requestOTP.options.method.toLowerCase() === 'post') {
+                resp = await fetch(url, {
+                    ...rest,
+                    body: body ? JSON.stringify(body) : undefined
+                });
 
-                    resp = await fetch(url, {
-                        ...rest,
-                        body: body ? JSON.stringify(body) : undefined
-                    });
+            } else {
 
-                } else {
-
-                    resp = await fetch(url, rest);
-                    
-                }
-
-                data = await resp.json();
-
-                if (!('duration' in data) || !Number.isInteger(data.duration) || (data.duration < 1)) {
-                    throw new Error('Invalid Server Response');
-                }
-
-                if (!('length') in data || !Number.isInteger(data.length) || (data.length < 1)) {
-                    throw new Error('Invalid Server Response');
-                }
-
-                const compensation = (Date.now() - instance.requested) / 2;
-
-                instance.duration = data.duration;
-                instance.expires = (new Date((instance.requested + (instance.duration - compensation)))).getTime();
-
-                options.chars = data.length;
-
-                instance.$chars = $(generateInputChars(data.length));
-                instance.$charsContainer.empty();
-                instance.$charsContainer.append(instance.$chars);
-
-                attachCharEventListeners();
-
-                instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined);
-
-            } catch (err) {
-
-                console.warn(`Error while requesting an one time password: ${err.message}`);
-
-                instance.options.fetch.requestOTP.onRequest.call(instance, undefined, err);
+                resp = await fetch(url, rest);
 
             }
+
+            data = await resp.json();
+
+            if (!('duration' in data) || !Number.isInteger(data.duration) || (data.duration < 1)) {
+                throw new Error('Invalid Server Response');
+            }
+
+            if (!('length') in data || !Number.isInteger(data.length) || (data.length < 1)) {
+                throw new Error('Invalid Server Response');
+            }
+
+            const compensation = (Date.now() - instance.requested) / 2;
+
+            instance.duration = data.duration;
+            instance.expires = (new Date((instance.requested + (instance.duration - compensation)))).getTime();
+
+            options.chars = data.length;
+
+            instance.$chars = $(generateInputChars(data.length));
+            instance.$charsContainer.empty();
+            instance.$charsContainer.append(instance.$chars);
+
+            attachCharEventListeners();
+
+            return data;
 
         }
 
         instance.validate = async function () {
 
-            try {
+            const { validateOTP } = instance.options.fetch;
+            const { body, ...rest } = validateOTP.options;
+            const url = createURL(validateOTP.url);
 
-                const { validateOTP } = instance.options.fetch;
-                const { body, ...rest } = validateOTP.options;
-                const url = createURL(validateOTP.url);
+            let resp, data;
 
-                let resp, data;
+            if (validateOTP.options.method.toLowerCase() === 'post') {
 
-                if (validateOTP.options.method.toLowerCase() === 'post') {
+                resp = await fetch(url, {
+                    ...rest,
+                    body: body ? JSON.stringify({
+                        ...body,
+                        [name]: instance.$input.val()
+                    }) : undefined
+                });
 
-                    resp = await fetch(url, {
-                        ...rest,
-                        body: body ? JSON.stringify({
-                            ...body,
-                            [name]: instance.$input.val()
-                        }) : undefined
-                    });
+            } else {
 
-                } else {
+                url.searchParams.set(name, instance.$input.val());
 
-                    url.searchParams.set(name, instance.$input.val());
-
-                    resp = await fetch(url, rest);
-
-                }
-
-                data = await resp.json();
-
-                if (!('valid' in data) || (typeof data.valid !== 'boolean')) {
-                    throw new Error('Invalid Server Response');                     
-                }
-
-                instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined);
-
-            } catch (err) {
-
-                console.warn(`Error while validating an one time password: ${err.message}`);
-
-                instance.options.fetch.validateOTP.onValidate.call(instance, undefined, err);
+                resp = await fetch(url, rest);
 
             }
+
+            data = await resp.json();
+
+            if (!('valid' in data) || (typeof data.valid !== 'boolean')) {
+                throw new Error('Invalid Server Response');
+            }
+
+            return data;
 
         }
 
@@ -634,31 +636,37 @@
                 instance.requested = null;
                 instance.expires = null;
                 instance.requested = Date.now();
+                
+                const data = await instance.request();
+                
+                if (instance.options.fetch.requestOTP.onRequest.call(instance, data, undefined) === true) {
+                    
+                    instance.$retry.prop('disabled', true);
+                    instance.$validate.prop('disabled', true);
 
-                await instance.request();
+                    instance.interval = setInterval(() => {
 
-                instance.$retry.prop('disabled', true);
-                instance.$validate.prop('disabled', true);
+                        if (instance.expires !== null && Date.now() >= instance.expires) {
 
-                instance.interval = setInterval(() => {
+                            clearInterval(instance.interval);
 
-                    if (instance.expires !== null && Date.now() >= instance.expires) {
+                            instance.$validate.prop('disabled', true);
+                            instance.$otp.addClass('expired');
 
-                        clearInterval(instance.interval);
+                        }
 
-                        instance.$validate.prop('disabled', true);
-                        instance.$otp.addClass('expired');
+                    }, 1000);
 
-                    }
+                    instance.$timeout.css('animation-duration', `${instance.duration}ms`);
+                    instance.$otp.addClass('visible');
 
-                }, 1000);
-
-                instance.$timeout.css('animation-duration', `${instance.duration}ms`);
-                instance.$otp.addClass('visible');
+                }
 
             } catch (err) {
-
+                
                 clearInterval(instance.interval);
+
+                instance.options.fetch.requestOTP.onRequest.call(instance, undefined, err);
 
                 instance.$retry.prop('disabled', false);
                 instance.$validate.prop('disabled', true);
@@ -700,18 +708,20 @@
 
                 try {
 
-                    await instance.validate();
+                    const data = await instance.validate();
 
-                    instance.hide(() => {
-                        instance.$otp.trigger('otp:valid');
-                        instance.$form.off('submit', onSubmit).submit();
-                    });
+                    if (instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined) === true) {
+
+                        instance.hide(() => {
+                            instance.$otp.trigger('otp:valid');
+                            instance.$form.off('submit', onSubmit).submit();
+                        });
+
+                    }
 
                 } catch (err) {
 
-                    instance.$retry.prop('disabled', false);
-                    instance.$validate.prop('disabled', true);
-                    instance.$otp.removeClass('expired').addClass('invalid retry');
+                    instance.options.fetch.validateOTP.onValidate.call(instance, undefined, err);
                     instance.$otp.trigger('otp:invalid');
 
                 }
@@ -727,17 +737,19 @@
 
                 try {
 
-                    await instance.validate();
+                    const data = await instance.validate();
 
-                    instance.hide(() => {
-                        instance.$otp.trigger('otp:valid');
-                    });
+                    if (instance.options.fetch.validateOTP.onValidate.call(instance, data, undefined) === true) {
+
+                        instance.hide(() => {
+                            instance.$otp.trigger('otp:valid');
+                        });
+
+                    }
 
                 } catch (err) {
 
-                    instance.$retry.prop('disabled', false);
-                    instance.$validate.prop('disabled', true);
-                    instance.$otp.removeClass('expired').addClass('invalid retry');
+                    instance.options.fetch.validateOTP.onValidate.call(instance, undefined, err);
                     instance.$otp.trigger('otp:invalid');
 
                 }
