@@ -57,7 +57,7 @@
 
                         return false;
 
-                    } else if (res.valid !== true) {
+                    } else if (res.result !== true) {
 
                         this.setErrorMessage('Invalid token provided');
 
@@ -560,7 +560,7 @@
 
             data = await resp.json();
 
-            if (!('duration' in data) || !Number.isInteger(data.duration) || (data.duration < 1)) {
+            if (!('validityInSeconds' in data) || !Number.isInteger(data.validityInSeconds) || (data.validityInSeconds < 1)) {
                 throw new Error('Invalid Server Response');
             }
 
@@ -570,7 +570,7 @@
 
             const compensation = (Date.now() - instance.requested) / 2;
 
-            instance.duration = data.duration;
+            instance.duration = data.validityInSeconds;
             instance.expires = (new Date((instance.requested + (instance.duration - compensation)))).getTime();
 
             options.chars = data.length;
@@ -613,7 +613,7 @@
 
             data = await resp.json();
 
-            if (!('valid' in data) || (typeof data.valid !== 'boolean')) {
+            if (!('result' in data) || (typeof data.result !== 'boolean')) {
                 throw new Error('Invalid Server Response');
             }
 
