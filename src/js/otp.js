@@ -570,7 +570,7 @@
 
             const compensation = (Date.now() - instance.requested) / 2;
 
-            instance.duration = data.validityInSeconds;
+            instance.duration = data.validityInSeconds * 1000; // convert seconds to ms
             instance.expires = (new Date((instance.requested + (instance.duration - compensation)))).getTime();
 
             options.chars = data.length;
